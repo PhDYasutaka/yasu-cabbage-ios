@@ -2,13 +2,13 @@ name: CabbageApp
 options:
   bundleIdPrefix: yasu
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "18.4"
 
 targets:
   CabbageApp:
     type: application
     platform: iOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "18.4"
     sources:
       - path: Sources
     info:
