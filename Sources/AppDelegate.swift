@@ -1,12 +1,10 @@
 import UIKit
 import UserNotifications
-import BackgroundTasks
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     static weak var shared: AppDelegate?
-    static let backgroundTaskIdentifier = "yasu.cabbage.refresh-notifications"
 
     func application(
         _ application: UIApplication,
@@ -14,28 +12,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         AppDelegate.shared = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
-
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: AppDelegate.backgroundTaskIdentifier,
-            using: nil
-        ) { task in
-            BackgroundNotificationChecker.shared.handle(task: task as! BGAppRefreshTask)
-        }
-
-        scheduleBackgroundRefresh()
+        // Background auto-refresh (BGTaskScheduler) is intentionally not wired up yet: it needs a
+        // Background Modes capability that a free/personal-team sideload cannot provision, and was
+        // causing a crash on launch. See BackgroundNotificationChecker.swift for the logic once a
+        // paid Apple Developer Program account is available to properly entitle it.
         return true
-    }
-
-    func applicationDidEnterBackground(_ application: UIApplication) {
-        scheduleBackgroundRefresh()
-    }
-
-    func scheduleBackgroundRefresh() {
-        let request = BGAppRefreshTaskRequest(identifier: AppDelegate.backgroundTaskIdentifier)
-        // iOS treats this as a hint, not a guarantee; actual runs may be spaced further apart
-        // depending on the user's usage pattern and system conditions.
-        request.earliestBeginDate = Date(timeIntervalSinceNow: 30 * 60)
-        try? BGTaskScheduler.shared.submit(request)
     }
 
     func application(

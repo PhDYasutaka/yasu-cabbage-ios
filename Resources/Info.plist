@@ -27,14 +27,5 @@
     <string>課題提出用の写真を撮影するためにカメラを使用します。</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>ダウンロードした資料を写真に保存する際に使用します。</string>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>fetch</string>
-        <string>processing</string>
-    </array>
-    <key>BGTaskSchedulerPermittedIdentifiers</key>
-    <array>
-        <string>yasu.cabbage.refresh-notifications</string>
-    </array>
 </dict>
 </plist>
