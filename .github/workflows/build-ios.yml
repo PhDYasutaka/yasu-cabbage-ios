@@ -1,0 +1,48 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned .app for a real device
+        run: |
+          xcodebuild \
+            -project CabbageApp.xcodeproj \
+            -scheme CabbageApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build
+
+      - name: Package into .ipa
+        run: |
+          set -e
+          PRODUCT_DIR="build/Build/Products/Release-iphoneos"
+          mkdir -p Payload
+          cp -r "$PRODUCT_DIR/CabbageApp.app" Payload/
+          zip -r CabbageApp.ipa Payload
+
+      - name: Upload .ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CabbageApp-unsigned-ipa
+          path: CabbageApp.ipa
+          retention-days: 14
