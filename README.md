@@ -32,13 +32,13 @@ gh run download <RUN_ID> --repo PhDYasutaka/yasu-cabbage-ios -n CabbageApp-unsig
 - Windows PC（このワークスペースと同じPCでOK）
 - iPhone本体とLightning/USB-Cケーブル
 - 無料のApple ID（何らかのApple IDでOK。App Store課金用と分けたい場合は新規作成しても良い）
-- [Sideloadly](https://sideloadly.io/)（Windows版をインストール。iTunes未インストールなら案内に従ってApple Mobile Device Supportも入れる）
+- [Sideloadly](https://sideloadly.io/)（このPCには`winget install iOSGods.Sideloadly`で導入済み。実体は`%LOCALAPPDATA%\Sideloadly\sideloadly.exe`。初回起動時にiTunes/Apple Mobile Device Supportのインストールを求められたら案内に従う）
 
 ### 手順
 
 1. 上記の`build-output/CabbageApp-unsigned-ipa/CabbageApp.ipa`を用意する（すでに最新コミット分がこのパスに存在するはずなので、コード変更していなければ再ビルド不要）
 2. iPhoneをUSBケーブルでPCに接続し、「このコンピュータを信頼する」を許可
-3. Sideloadlyを起動し、`.ipa`を上のCabbageApp.ipaにドラッグ＆ドロップ
+3. Sideloadlyを起動し(インストール済みならスタートメニューで「Sideloadly」を検索)、`.ipa`を上のCabbageApp.ipaにドラッグ＆ドロップ
 4. Apple IDのメールアドレスを入力して「Start」。初回はApple IDのパスワード入力を求められる（2ファクタ認証のコードも）
 5. サイドロード完了後、iPhone側で「設定 > 一般 > VPNとデバイス管理」から、使用したApple IDの「デベロッパAPP」を信頼する
 6. ホーム画面に追加された「きゃべつ」アイコンをタップして起動
