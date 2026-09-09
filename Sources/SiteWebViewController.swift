@@ -2,9 +2,12 @@ import UIKit
 import WebKit
 import UniformTypeIdentifiers
 
-class MainViewController: UIViewController {
+/// A single WebView-backed tab. Each site (LETUS, CLASS, ...) gets its own instance
+/// pointed at a different start URL; they all share the default WKWebsiteDataStore, so
+/// logging into the university's Shibboleth SSO on one tab carries over to the others.
+class SiteWebViewController: UIViewController {
 
-    private static let startURL = URL(string: "https://letus.ed.tus.ac.jp/")!
+    private let startURL: URL
 
     private var webView: WKWebView!
     private let progressBar = UIProgressView(progressViewStyle: .bar)
@@ -12,12 +15,20 @@ class MainViewController: UIViewController {
 
     private var pendingFileUploadCompletion: (([URL]?) -> Void)?
 
+    init(title: String, startURL: URL) {
+        self.startURL = startURL
+        super.init(nibName: nil, bundle: nil)
+        self.title = title
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupWebView()
         setupProgressBar()
-        webView.load(URLRequest(url: MainViewController.startURL))
+        webView.load(URLRequest(url: startURL))
     }
 
     private func setupWebView() {
@@ -67,7 +78,7 @@ class MainViewController: UIViewController {
 
 // MARK: - WKNavigationDelegate
 
-extension MainViewController: WKNavigationDelegate {
+extension SiteWebViewController: WKNavigationDelegate {
 
     func webView(
         _ webView: WKWebView,
@@ -120,7 +131,7 @@ extension MainViewController: WKNavigationDelegate {
 
 // MARK: - WKDownloadDelegate (file downloads, e.g. course materials)
 
-extension MainViewController: WKDownloadDelegate {
+extension SiteWebViewController: WKDownloadDelegate {
 
     func download(
         _ download: WKDownload,
@@ -149,7 +160,7 @@ extension MainViewController: WKDownloadDelegate {
 
 // MARK: - WKUIDelegate (file uploads for assignment submission, target=_blank links)
 
-extension MainViewController: WKUIDelegate {
+extension SiteWebViewController: WKUIDelegate {
 
     func webView(
         _ webView: WKWebView,
@@ -223,7 +234,7 @@ extension MainViewController: WKUIDelegate {
 
 // MARK: - UIDocumentPickerDelegate
 
-extension MainViewController: UIDocumentPickerDelegate {
+extension SiteWebViewController: UIDocumentPickerDelegate {
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         pendingFileUploadCompletion?(urls)
