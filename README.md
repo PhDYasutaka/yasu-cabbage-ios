@@ -4,7 +4,8 @@
 
 ## 機能
 
-- LETUS (`https://letus.ed.tus.ac.jp/`) をアプリ内WebViewで表示。SSO(Shibboleth)ログインもWebView内で完結
+- 下部タブバーでLETUSとCLASS(Campus Life Assist System TUS、東京理科大の学務ポータル)を切り替え可能。タブの定義は[Sources/Sites.swift](Sources/Sites.swift)に集約されており、サイトを追加したい場合(将来的に食堂サイトなど)はここに1エントリ足すだけでよい
+- 各タブは同じWKWebsiteDataStoreを共有しているため、どちらかでSSO(Shibboleth)ログインすればもう片方にもログイン状態が引き継がれる
 - Cookieは永続化され、次回起動時もログイン状態を維持
 - 課題提出などのファイルダウンロードは共有シート経由でFiles/AirDropに保存可能
 - ファイルアップロード時、端末内ファイルの選択に加えて「写真を撮影/選択してPDFにまとめてアップロード」が可能（複数枚→1つのPDFに変換）
