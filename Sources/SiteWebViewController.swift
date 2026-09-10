@@ -1,6 +1,7 @@
 import UIKit
 import WebKit
 import UniformTypeIdentifiers
+import QuickLook
 
 /// A single WebView-backed tab. Each site (LETUS, CLASS, ...) gets its own instance
 /// pointed at a different start URL; they all share the default WKWebsiteDataStore, so
@@ -13,7 +14,13 @@ class SiteWebViewController: UIViewController {
     private let progressBar = UIProgressView(progressViewStyle: .bar)
     private var progressObservation: NSKeyValueObservation?
 
+    private let backButton = UIButton(type: .system)
+    private let forwardButton = UIButton(type: .system)
+    private var canGoBackObservation: NSKeyValueObservation?
+    private var canGoForwardObservation: NSKeyValueObservation?
+
     private var pendingFileUploadCompletion: (([URL]?) -> Void)?
+    private var previewFileURL: URL?
 
     init(title: String, startURL: URL) {
         self.startURL = startURL
@@ -27,6 +34,7 @@ class SiteWebViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupWebView()
+        setupNavBar()
         setupProgressBar()
         webView.load(URLRequest(url: startURL))
     }
@@ -56,8 +64,36 @@ class SiteWebViewController: UIViewController {
         NSLayoutConstraint.activate([
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    private func setupNavBar() {
+        backButton.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        backButton.addTarget(self, action: #selector(handleGoBack), for: .touchUpInside)
+        forwardButton.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        forwardButton.addTarget(self, action: #selector(handleGoForward), for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [backButton, forwardButton])
+        stack.axis = .horizontal
+        stack.spacing = 28
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16)
+        ])
+
+        canGoBackObservation = webView.observe(\.canGoBack, options: [.new, .initial]) { [weak self] webView, _ in
+            self?.backButton.isEnabled = webView.canGoBack
+        }
+        canGoForwardObservation = webView.observe(\.canGoForward, options: [.new, .initial]) { [weak self] webView, _ in
+            self?.forwardButton.isEnabled = webView.canGoForward
+        }
+
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: stack.bottomAnchor, constant: 4)
         ])
     }
 
@@ -67,12 +103,20 @@ class SiteWebViewController: UIViewController {
         NSLayoutConstraint.activate([
             progressBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             progressBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            progressBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
+            progressBar.topAnchor.constraint(equalTo: webView.topAnchor)
         ])
     }
 
     @objc private func handlePullToRefresh() {
         webView.reload()
+    }
+
+    @objc private func handleGoBack() {
+        webView.goBack()
+    }
+
+    @objc private func handleGoForward() {
+        webView.goForward()
     }
 }
 
@@ -146,15 +190,37 @@ extension SiteWebViewController: WKDownloadDelegate {
     }
 
     func downloadDidFinish(_ download: WKDownload) {
-        // Hand the downloaded file to the system share sheet so the user can save it
-        // to Files, AirDrop it, etc. iOS has no single shared "Downloads" folder an app
-        // can just drop files into the way Android's DownloadManager does.
         guard let url = download.progress.fileURL else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-            self.present(activityVC, animated: true)
+            if url.pathExtension.lowercased() == "pdf" {
+                // Show PDFs straight in Quick Look instead of just handing them to the share
+                // sheet; the share sheet is still one tap away from there if the user wants
+                // to save it to Files or AirDrop it.
+                self.previewFileURL = url
+                let preview = QLPreviewController()
+                preview.dataSource = self
+                self.present(preview, animated: true)
+            } else {
+                // No single shared "Downloads" folder an app can drop files into the way
+                // Android's DownloadManager does, so hand it to the share sheet instead.
+                let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                self.present(activityVC, animated: true)
+            }
         }
+    }
+}
+
+// MARK: - QLPreviewControllerDataSource (in-app PDF preview)
+
+extension SiteWebViewController: QLPreviewControllerDataSource {
+
+    func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
+        previewFileURL == nil ? 0 : 1
+    }
+
+    func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+        previewFileURL! as NSURL
     }
 }
 
